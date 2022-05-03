@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, {useMemo, useState} from 'react';
+import produce from 'immer';
 
 import styles from './DerivativeCatalogue.module.css';
-import {getSeries, putSeries, DerivativeInfo, DerivativeName} from './derivativeCatalogueAPI';
+import {DerivativeInfo, DerivativeName, GetSeriesResponse, UpdateSeriesStartRequest} from '../../services/series/types';
+import {useGetSeriesQuery, useUpdateSeriesMutation} from '../../services/series/api';
 
 import Select from 'react-select';
 import {ClimbingBoxLoader} from 'react-spinners';
@@ -16,12 +18,7 @@ interface DerivativeIndex {
     }
 }
 
-function makeOptions(derivatives: DerivativeNameIndex): {value: DerivativeInfo, label: string}[] {
-    return Object.entries(derivatives).map(([key, value]) => ({value: value, label: key}))
-}
-
-async function getDerivativeIndex(): Promise<DerivativeIndex> {
-    const response = await getSeries();
+function getDerivativeIndex(response: GetSeriesResponse): DerivativeIndex {
     const derivativeIndex: DerivativeIndex = {};
 
     for (let item of response['derivatives']) {
@@ -36,53 +33,74 @@ async function getDerivativeIndex(): Promise<DerivativeIndex> {
     return derivativeIndex;
 }
 
-async function putDerivativeIndex(derivativeIndex: DerivativeIndex) {
+function getDerivatives(
+    platformSource: string | null,
+    platformCode: string | null,
+    derivativeIndex: DerivativeIndex
+): DerivativeNameIndex {
+    if (platformSource && platformCode) {
+        return derivativeIndex[platformSource][platformCode];
+    }
+
+    return {};
+}
+
+function makeUpdateSeriesStartRequest(derivativeIndex: DerivativeIndex): UpdateSeriesStartRequest {
     const derivatives: DerivativeInfo[] = Object.values(derivativeIndex).flatMap(
         item => Object.values(item).flatMap(
             item => Object.values(item)));
 
-    await putSeries({derivatives});
+    return {derivatives};
 }
 
 export function DerivativeCatalogue() {
     const [derivativeIndex, setDerivativeIndex] = useState<DerivativeIndex>({});
     const [platformSource, setPlatformSource] = useState<null | string>(null);
     const [platformCode, setPlatformCode] = useState<null | string>(null);
-    const [_, forceRerender] = useState<any>(null);
-    const [saving, setSaving] = useState<boolean>(false);
 
-    useEffect(() => {
-        getDerivativeIndex().then(setDerivativeIndex);
-    }, []);
-
-    const platformSources = Object.keys(derivativeIndex);
-    const getPlatformCodes = useCallback(
-        () => platformSource ? Object.keys(derivativeIndex[platformSource]) : [],
-        [platformSource]
+    const {data: getSeriesResponse, isLoading: isSeriesLoading} = useGetSeriesQuery();
+    useMemo(
+        () => getSeriesResponse && setDerivativeIndex(getDerivativeIndex(getSeriesResponse)),
+        [getSeriesResponse]
     );
-    const getDerivatives = useCallback(
-        () => platformSource && platformCode ? derivativeIndex[platformSource][platformCode] : {},
+
+    const [updateSeries, {isLoading: isSeriesUpdating}] = useUpdateSeriesMutation();
+
+    const platformSourcesOptions = useMemo(
+        () => Object.keys(derivativeIndex)
+            .map(item => ({label: item, value: item})),
+        [derivativeIndex]
+    );
+    const platformCodesOptions = useMemo(
+        () => (platformSource ? Object.keys(derivativeIndex[platformSource]) : [])
+            .map(item => ({label: item, value: item})),
+        [platformSource, derivativeIndex]
+    );
+    const derivativeOptions = useMemo(
+        () => Object.keys(getDerivatives(platformSource, platformCode, derivativeIndex))
+            .map(item => ({label: item, value: item})),
         [platformSource, platformCode, derivativeIndex]
-    );
-
-    const getVisibleDerivatives = () => Object.fromEntries(
-        Object.entries(getDerivatives()).filter(([_, value]) => value.visible)
-    );
+    )
+    const derivativeValues = useMemo(
+        () => Object.entries(getDerivatives(platformSource, platformCode, derivativeIndex))
+            .filter(([_, value]) => value.visible)
+            .map(([key, _]) => ({label: key, value: key})),
+        [platformSource, platformCode, derivativeIndex]
+    )
 
     return (
         <div>
             <div className={styles.selectors}>
                 <button
                     className={styles.save_button}
-                    disabled={saving}
+                    disabled={isSeriesUpdating}
                     onClick={() => {
-                        setSaving(true);
-                        putDerivativeIndex(derivativeIndex).then(() => setSaving(false));
+                        updateSeries(makeUpdateSeriesStartRequest(derivativeIndex));
                     }}>
                     Save
                 </button>
                 <Select
-                    options={platformSources.map(item => ({value: item, label: item}))}
+                    options={platformSourcesOptions}
                     isSearchable
                     onChange={selectedOption => {
                         if (selectedOption) {
@@ -93,31 +111,36 @@ export function DerivativeCatalogue() {
                     }}
                 />
                 <Select
-                    options={getPlatformCodes().map(item => ({value: item, label: item}))}
-                    value={platformCode && {value: platformCode, label: platformCode}}
+                    options={platformCodesOptions}
+                    value={platformCode && {label: platformCode, value: platformCode}}
                     isSearchable
                     onChange={selectedOption => selectedOption && setPlatformCode(selectedOption.value)}
                 />
                 <Select
                     className={styles.derivative_selector}
-                    options={makeOptions(getDerivatives())}
-                    value={makeOptions(getVisibleDerivatives())}
+                    options={derivativeOptions}
+                    value={derivativeValues}
                     isMulti
                     isSearchable
                     onChange={selectedOptions => {
-                        Object.values(getDerivatives()).forEach(item => {
-                            item.visible = false;
-                        });
-                        selectedOptions.forEach(item => {
-                            item.value.visible = true;
-                        });
-
-                        forceRerender({});
+                        setDerivativeIndex(
+                            produce(
+                                derivativeIndex, draft => {
+                                    const derivatives = getDerivatives(platformSource, platformCode, draft);
+                                    Object.values(derivatives).forEach(item => {
+                                        item.visible = false;
+                                    });
+                                    selectedOptions.forEach(item => {
+                                        derivatives[item.value].visible = true;
+                                    });
+                                }
+                            )
+                        )
                     }}
                 />
             </div>
             <div className={styles.loader}>
-                <ClimbingBoxLoader loading={saving}/>
+                <ClimbingBoxLoader loading={isSeriesLoading || isSeriesUpdating}/>
             </div>
         </div>
     );
