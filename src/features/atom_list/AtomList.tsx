@@ -3,12 +3,10 @@ import {useGetAtomsQuery, usePushAtomsMutation} from '../../services/atoms/api';
 
 import styles from './AtomList.module.css'
 import Select from 'react-select';
-import {
-    Button, Divider,
-} from '@mui/material';
+import {Button, Divider,} from '@mui/material';
 import {useAppSelector} from '../../app/hooks';
 import Box from '@mui/material/Box';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import {PushColumn} from "../../services/atoms/types";
 import {AtomEditor} from "../atom_editor/AtomEditor";
 
@@ -58,8 +56,8 @@ export function AtomList() {
 
     return (
         <>
-            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%'}}>
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+            <Box sx={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+                <Box sx={{display: 'flex', flexDirection: 'row'}}>
                     <Box sx={{display: 'flex', flexDirection: 'row', width: '50%', marginRight: '10px'}}>
                         <Button
                             disabled={selectedColumns.length === 0}
@@ -85,7 +83,10 @@ export function AtomList() {
                         </Button>
                         <Select
                             className={styles.select}
-                            options={Object.entries(datasets).map(([superset_id, {name}]) => ({label: name, value: superset_id}))}
+                            options={Object.entries(datasets).map(([superset_id, {name}]) => ({
+                                label: name,
+                                value: superset_id
+                            }))}
                             isSearchable
                             onChange={selectedOption => {
                                 setSupersetDatasetId(selectedOption && Number(selectedOption.value));
@@ -103,25 +104,25 @@ export function AtomList() {
                     </Box>
                 </Box>
                 {supersetDatasetId &&
-                    <Box sx={{ flexGrow: 1, flexBasis: 'auto' }}>
-                        <DataGrid sx={{ height: '100%' }}
-                          rows={
-                              Object.values(datasets[supersetDatasetId].columns).map((column) => ({
-                                  name: column.name,
-                                  state: column.state,
-                                  user_expression: column.user_expression?.expression,
-                                  basic_atoms_expression: column.user_expression?.basic_atoms_expression,
-                                  superset_expression: column.superset_expression?.expression,
+                <Box sx={{flexGrow: 1, flexBasis: 'auto'}}>
+                  <DataGrid sx={{height: '100%'}}
+                            rows={
+                                Object.values(datasets[supersetDatasetId].columns).map((column) => ({
+                                    name: column.name,
+                                    state: column.state,
+                                    user_expression: column.user_expression?.expression,
+                                    basic_atoms_expression: column.user_expression?.basic_atoms_expression,
+                                    superset_expression: column.superset_expression?.expression,
                                 }))
-                          }
-                          columns={COLUMNS}
-                          pageSize={10}
-                          checkboxSelection
-                          onSelectionModelChange={(ids) => setSelectedColumns(ids as string[])}
-                          disableSelectionOnClick
-                          getRowId={row => row.name}
-                        />
-                    </Box>
+                            }
+                            columns={COLUMNS}
+                            pageSize={10}
+                            checkboxSelection
+                            onSelectionModelChange={(ids) => setSelectedColumns(ids as string[])}
+                            disableSelectionOnClick
+                            getRowId={row => row.name}
+                  />
+                </Box>
                 }
             </Box>
         </>

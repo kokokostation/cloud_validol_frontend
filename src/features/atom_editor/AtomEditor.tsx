@@ -1,10 +1,7 @@
 import React, {useState} from 'react';
 import {useCreateAtomMutation} from '../../services/atoms/api';
 
-import {
-    Button, Dialog, DialogTitle,
-    IconButton, Input,
-} from '@mui/material';
+import {Button, Dialog, DialogTitle, IconButton, Input,} from '@mui/material';
 import Box from '@mui/material/Box';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
