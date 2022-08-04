@@ -1,22 +1,14 @@
 import React, {useMemo, useState} from 'react';
 import produce from 'immer';
 
-import styles from './DerivativeCatalogue.module.css';
+import styles from './DerivativeList.module.css';
 import {DerivativeInfo, DerivativeName, GetSeriesResponse, UpdateSeriesStartRequest} from '../../services/series/types';
 import {useGetSeriesQuery, useUpdateSeriesMutation} from '../../services/series/api';
+import {DerivativeIndex, DerivativeNameIndex} from './types';
 
 import Select from 'react-select';
 import {ClimbingBoxLoader} from 'react-spinners';
-
-interface DerivativeNameIndex {
-    [derivative_name: string]: DerivativeInfo
-}
-
-interface DerivativeIndex {
-    [platform_source: string]: {
-        [platform_code: string]: DerivativeNameIndex
-    }
-}
+import {Box, Button} from "@mui/material";
 
 function getDerivativeIndex(response: GetSeriesResponse): DerivativeIndex {
     const derivativeIndex: DerivativeIndex = {};
@@ -53,7 +45,7 @@ function makeUpdateSeriesStartRequest(derivativeIndex: DerivativeIndex): UpdateS
     return {derivatives};
 }
 
-export function DerivativeCatalogue() {
+export function DerivativeList() {
     const [derivativeIndex, setDerivativeIndex] = useState<DerivativeIndex>({});
     const [platformSource, setPlatformSource] = useState<null | string>(null);
     const [platformCode, setPlatformCode] = useState<null | string>(null);
@@ -89,17 +81,10 @@ export function DerivativeCatalogue() {
     )
 
     return (
-        <div>
-            <div className={styles.selectors}>
-                <button
-                    className={styles.save_button}
-                    disabled={isSeriesUpdating}
-                    onClick={() => {
-                        updateSeries(makeUpdateSeriesStartRequest(derivativeIndex));
-                    }}>
-                    Save
-                </button>
+        <Box>
+            <Box>
                 <Select
+                    className={styles.select}
                     options={platformSourcesOptions}
                     isSearchable
                     onChange={selectedOption => {
@@ -111,13 +96,14 @@ export function DerivativeCatalogue() {
                     }}
                 />
                 <Select
+                    className={styles.select}
                     options={platformCodesOptions}
                     value={platformCode && {label: platformCode, value: platformCode}}
                     isSearchable
                     onChange={selectedOption => selectedOption && setPlatformCode(selectedOption.value)}
                 />
                 <Select
-                    className={styles.derivative_selector}
+                    className={styles.select}
                     options={derivativeOptions}
                     value={derivativeValues}
                     isMulti
@@ -138,10 +124,19 @@ export function DerivativeCatalogue() {
                         )
                     }}
                 />
-            </div>
+                <Box sx={{display: 'flex', justifyContent: 'center'}}>
+                    <Button
+                        disabled={isSeriesUpdating}
+                        onClick={() => {
+                            updateSeries(makeUpdateSeriesStartRequest(derivativeIndex));
+                        }}>
+                        Save
+                    </Button>
+                </Box>
+            </Box>
             <div className={styles.loader}>
                 <ClimbingBoxLoader loading={isSeriesLoading || isSeriesUpdating}/>
             </div>
-        </div>
+        </Box>
     );
 }

@@ -1,21 +1,16 @@
-import { createApi, fetchBaseQuery, FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
-import {
-    GetSeriesResponse,
-    UpdateSeriesStartRequest,
-    UpdateSeriesStartResponse,
-    UpdateSeriesPollResponse
-} from './types'
-import { sleep } from '../../utils/common';
+import {createApi, fetchBaseQuery, FetchBaseQueryError} from '@reduxjs/toolkit/query/react'
+import {GetSeriesResponse, UpdateSeriesPollResponse, UpdateSeriesStartRequest, UpdateSeriesStartResponse} from './types'
+import {sleep} from '../../utils/common';
 
 export const adminSeriesApi = createApi({
     reducerPath: 'adminSeriesApi',
-    baseQuery: fetchBaseQuery({ baseUrl: '/admin-api' }),
+    baseQuery: fetchBaseQuery({baseUrl: '/admin-api'}),
     endpoints: (builder) => ({
         getSeries: builder.query<GetSeriesResponse, void>({
             query: () => '/series',
         }),
         updateSeries: builder.mutation<void, UpdateSeriesStartRequest>({
-            async queryFn(arg, _queryApi, _extraOptions, fetchWithBQ) {
+            async queryFn(arg, {dispatch}, _extraOptions, fetchWithBQ) {
                 const startResponse = await fetchWithBQ({
                     url: '/series/update_start',
                     method: 'POST',
@@ -54,6 +49,6 @@ export const adminSeriesApi = createApi({
             }
         })
     }),
-})
+});
 
-export const { useGetSeriesQuery, useUpdateSeriesMutation } = adminSeriesApi
+export const {useGetSeriesQuery, useUpdateSeriesMutation} = adminSeriesApi;
