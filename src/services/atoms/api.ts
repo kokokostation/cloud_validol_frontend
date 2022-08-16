@@ -1,6 +1,6 @@
 import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react'
 import {datasetsFetched} from '../../features/atom_list/atomListSlice';
-import {CreateAtomRequest, GetAtomsResponse, PushAtomsRequest} from './types'
+import {CreateAtomRequest, DeleteAtomRequest, GetAtomsResponse, PushAtomsRequest, UpdateAtomRequest} from './types'
 
 export const atomsApi = createApi({
     reducerPath: 'atomsApi',
@@ -41,7 +41,32 @@ export const atomsApi = createApi({
             },
             invalidatesTags: [{type: 'Atoms', id: 'LIST'}],
         }),
+        updateAtom: builder.mutation<void, UpdateAtomRequest>({
+            query(body) {
+                return {
+                    url: `/atom`,
+                    method: 'PUT',
+                    body,
+                }
+            },
+            invalidatesTags: [{type: 'Atoms', id: 'LIST'}],
+        }),
+        deleteAtom: builder.mutation<void, DeleteAtomRequest>({
+            query(query) {
+                return {
+                    url: `/atom?name=${query.name}`,
+                    method: 'DELETE',
+                }
+            },
+            invalidatesTags: [{type: 'Atoms', id: 'LIST'}],
+        }),
     }),
 });
 
-export const {useGetAtomsQuery, usePushAtomsMutation, useCreateAtomMutation} = atomsApi;
+export const {
+    useGetAtomsQuery,
+    usePushAtomsMutation,
+    useCreateAtomMutation,
+    useUpdateAtomMutation,
+    useDeleteAtomMutation
+} = atomsApi;

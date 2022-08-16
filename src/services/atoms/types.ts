@@ -41,3 +41,12 @@ export interface CreateAtomRequest {
     expression: string,
     superset_dataset_id: number
 }
+
+export interface UpdateAtomRequest {
+    name: string,
+    expression: string,
+}
+
+export interface DeleteAtomRequest {
+    name: string
+}
