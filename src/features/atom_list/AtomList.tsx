@@ -29,9 +29,12 @@ import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Close';
 import {PushColumn} from "../../services/atoms/types";
 import {AtomEditor} from "../atom_editor/AtomEditor";
+import {useSnackbar} from 'notistack';
 
 
 export function AtomList() {
+    const {enqueueSnackbar} = useSnackbar();
+
     const [supersetDatasetId, setSupersetDatasetId] = useState<number | null>(null);
     const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
@@ -63,7 +66,10 @@ export function AtomList() {
         setRowModesModel({...rowModesModel, [id]: {mode: GridRowModes.View}});
     };
     const handleDeleteClick = (id: GridRowId) => () => {
-        deleteAtom({name: id as string});
+        deleteAtom({name: id as string}).unwrap().then(
+            () => enqueueSnackbar('Atom is successfully deleted', {variant: 'success'}),
+            (error) => enqueueSnackbar(`Failed to delete atom: ${error.data}`, {variant: 'error'})
+        );
     };
     const handleCancelClick = (id: GridRowId) => () => {
         setRowModesModel({
@@ -72,7 +78,10 @@ export function AtomList() {
         });
     };
     const processRowUpdate = (newRow: GridRowModel) => {
-        updateAtom({name: newRow.name, expression: newRow.user_expression});
+        updateAtom({name: newRow.name, expression: newRow.user_expression}).unwrap().then(
+            () => enqueueSnackbar('Atom is successfully updated', {variant: 'success'}),
+            (error) => enqueueSnackbar(`Failed to update atom: ${error.data}`, {variant: 'error'})
+        );
 
         return newRow;
     };
@@ -179,7 +188,10 @@ export function AtomList() {
                                     ).filter(
                                         column => !!column.basic_atoms_expression
                                     ) as PushColumn[]
-                                })
+                                }).unwrap().then(
+                                    () => enqueueSnackbar('Atoms are successfully pushed to superset', {variant: 'success'}),
+                                    (error) => enqueueSnackbar(`Failed to push atoms: ${error.data}`, {variant: 'error'})
+                                );
                             }}
                         >
                             Push to superset

@@ -4,6 +4,7 @@ import {useCreateAtomMutation} from '../../services/atoms/api';
 import {Button, Dialog, DialogTitle, IconButton, Input,} from '@mui/material';
 import Box from '@mui/material/Box';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import {useSnackbar} from 'notistack';
 
 
 interface AtomEditorProps {
@@ -14,6 +15,8 @@ interface AtomEditorProps {
 
 
 export function AtomEditor(props: AtomEditorProps) {
+    const {enqueueSnackbar} = useSnackbar();
+
     const [atomName, setAtomName] = useState<string>(props.name ?? '');
     const [expression, setExpression] = useState<string>(props.expression ?? '');
     const [atomDialogOpen, setAtomDialogOpen] = useState<boolean>(false);
@@ -47,12 +50,18 @@ export function AtomEditor(props: AtomEditorProps) {
                             name: atomName,
                             expression: expression,
                             superset_dataset_id: props.supersetDatasetId as number
-                        }).unwrap().then(() => {
-                            setExpression('');
-                        }).finally(() => {
-                            setAtomName('');
-                            setAtomDialogOpen(false);
-                        })
+                        }).unwrap().then(
+                            () => {
+                                setExpression('');
+                                enqueueSnackbar('Atom is successfully created', {variant: 'success'})
+                            },
+                            (error) => enqueueSnackbar(`Failed to create atom: ${error.data}`, {variant: 'error'})
+                        ).finally(
+                            () => {
+                                setAtomName('');
+                                setAtomDialogOpen(false);
+                            }
+                        )
                     }}
                 >
                     Save
